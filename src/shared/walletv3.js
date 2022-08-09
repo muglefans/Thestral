@@ -3,6 +3,7 @@ require('promise.prototype.finally').shim()
 const crypto = require('crypto')
 import fs from 'fs'
 import {ownerApiSecretPath, mugleWalletPath, platform} from './config'
+import { messageBus } from '../renderer/messagebus'
 import log from './logger'
 import {exec, execFile} from 'child_process'
 
@@ -204,26 +205,21 @@ class WalletServiceV3 {
 
     static scanWallet(cb){
         if(!token)return
-        //console.log('start scan wallet' )
+
         let output = 'start scan wallet'
         cb(output)
-        return new Promise((resolve, reject)=>{
-            WalletServiceV3.postEncrypted('scan', {
-                'token': token,
-                'start_height': 1,
-                'delete_unconfirmed': false
-            }).then((res)=>{
-                //log.debug('open_wallet return: ' + JSON.stringify(res))
-                console.log(res.result )
-                output = res.result.Ok
-                cb(output)
-                messageBus.$emit('walletCheckFinished')
-                resolve(res)
-            }).catch(err=>{
-                log.debug('mugle wallet check exists with err: ' + err);
-                messageBus.$emit('scaned')
-                reject(err)
-            })
+        return WalletServiceV3.postEncrypted('scan', {
+            'token': token,
+            'start_height': 1,
+            'delete_unconfirmed': false
+        }).then((res)=>{
+            //log.debug('open_wallet return: ' + JSON.stringify(res))
+            cb('scan success')
+            messageBus.$emit('walletCheckFinished')
+        }).catch(err=>{
+            cb(cb('scan err'))
+            log.debug('mugle wallet check exists with err: ' + err);
+            messageBus.$emit('scaned')
         })
     }
 
